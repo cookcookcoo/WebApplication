@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Chat Room</title>
+
+    <!-- Bootstrap CSS -->
+    <!-- <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css"> -->
+    <!-- Bootstrap Icons CSS -->
+    <!-- <link rel="stylesheet" href="../node_modules/bootstrap-icons/font/bootstrap-icons.css"> -->
+    <!-- Bootstrap JS -->
+    <!-- <script src="../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script> -->
+
+
+    <style>
+        .container {
+            display: flex;
+            height: 100vh;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: stretch;
+        }
+
+        /* user list */
+        .user-list {
+            flex: 0 0 200px;
+            background-color: #007bcf;
+            padding: 20px;
+            color: white;
+        }
+
+        .user-list-title {
+            font-weight: bold;
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        .user-list-item {
+            margin-bottom: 5px;
+        }
+
+        .user-list-item span {
+            font-weight: bold;
+            margin-right: 5px;
+        }
+
+        /* chat */
+        .chat-message {
+            color: #007bff;
+            margin: 10px 10px 0;
+            padding: 10px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+            max-width: 80%;
+            align-self: flex-start;
+            word-wrap: break-word;
+            margin-top: 10px;
+        }
+
+        .chat {
+            position: relative;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: stretch;
+            background-color: #f7f7f7;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .input-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            background-color: #f2f2f2;
+            padding: 10px;
+        }
+
+        .input-container input {
+            color: #007bff;
+            flex: 1;
+            margin-right: 10px;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+        }
+
+
+        .input-container button {
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="user-list">
+            <div class="user-list-title">Online Users</div>
+            <div id="user-list-items">
+                user1
+            </div>
+        </div>
+        <div id="chat" class="chat">
+            <div class="chat-message">
+                Let's have a chat!
+            </div>
+            <div class="input-container">
+                <input id="text" type="text" placeholder="Type your message here">
+                <button id="send">Send</button>
+            </div>
+        </div>
+    </div>
+</body>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const socket = io();
+    var chat = document.getElementById('chat');
+    var send = document.getElementById("send");
+    var text = document.getElementById('text');
+    var username = '';
+
+    send.addEventListener('click', () => {
+        var value = text.value;
+        socket.emit('send-clicked', { username: username, message: value });
+        text.value = '';
+    });
+
+    socket.on('send-clicked', (data) => {
+        var item = document.createElement('div');
+        item.setAttribute('class', 'chat-message');
+        item.innerHTML = data.username + ": " + data.message;
+        chat.appendChild(item);
+    });
+
+    const userListItems = document.getElementById("user-list-items");
+
+    // 请求在线用户列表
+    socket.emit('get-users');
+
+    // 用户加入事件
+    socket.on('user-joined', (username) => {
+        // 添加新用户到HTML中
+        const userListItem = document.createElement('div');
+        userListItem.setAttribute('class', 'user-list-item');
+        userListItem.innerHTML = `<span>${username}:</span> online`;
+        userListItems.appendChild(userListItem);
+        socket.username = username;
+
+        //show a notification to the existing users when a new user joins
+        var item = document.createElement('div');
+        item.setAttribute('class', 'chat-message');
+        item.innerHTML = username + " joined~";
+        chat.appendChild(item);
+    });
+
+    // 用户退出事件
+    socket.on('user-left', (username) => {
+        const userListItem = document.querySelector(`[data-username='${username}']`);
+        userListItem.remove();
+
+        //show a notification to the existing users when a user leaves
+        var item = document.createElement('div');
+        item.setAttribute('class', 'chat-message');
+        item.innerHTML = username + " left~";
+        chat.appendChild(item);
+    });
+
+    // 在线用户列表更新事件
+    socket.on('users', (users) => {
+        // 清空用户列表
+        userListItems.innerHTML = '';
+        // 遍历在线用户列表，添加到HTML中
+        for (let i = 0; i < users.length; i++) {
+            const userListItem = document.createElement('div');
+            userListItem.setAttribute('class', 'user-list-item');
+            userListItem.innerHTML = `<span>${users[i]}:</span> online`;
+            userListItems.appendChild(userListItem);
+            console.log(users);
+        }
+    });
+
+
+    const urlParams = new URLSearchParams(window.location.search);
+    username = urlParams.get('username');
+
+
+
+</script>
+
+</html>
