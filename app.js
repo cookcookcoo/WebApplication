@@ -23,13 +23,16 @@ app.get('/chat', (req, res) => {
 let users = [];
 
 io.on('connection', (socket) => {
+    // 消息发送处理
+    socket.on('send-clicked', (data) => {
+        io.emit('send-clicked', data);
+    });
+    
     // 用户加入处理
     socket.on('join', (username) => {
-        
-        socket.username = username;
-
+        console.log("zhendefan");
         console.log('User joined:', username);
-
+        socket.username = username;
         users.push(username);
         socket.broadcast.emit('user-joined', username); // 发送用户加入事件
         io.emit('users', users); // 发送在线用户列表   
@@ -39,25 +42,21 @@ io.on('connection', (socket) => {
         socket.emit('users', users);
     });
 
-    socket.on('disconnect', () => {
-        console.log('disconncect:'+socket.username);
-        if (socket.username) {
-            console.log('pass');
-            const index = users.indexOf(socket.username);
-            if (index !== -1) {
-                users.splice(index, 1);
-                // io.emit('user-left', socket.username); // 发送用户离开事件
-                // io.emit('users', users); // 发送在线用户列表
-                console.log('someone leave');
-            }
-        }
-    });
+    // socket.on('disconnect', () => {
+    //     console.log('disconncect:'+socket.username);
+    //     if (socket.username) {
+    //         console.log('pass');
+    //         const index = users.indexOf(socket.username);
+    //         if (index !== -1) {
+    //             users.splice(index, 1);
+    //             // io.emit('user-left', socket.username); // 发送用户离开事件
+    //             // io.emit('users', users); // 发送在线用户列表
+    //             console.log('someone leave');
+    //         }
+    //     }
+    // });
 
 
-    // 消息发送处理
-    socket.on('send-clicked', (data) => {
-        io.emit('send-clicked', data);
-    });
 });
 
 http.listen(8080, () => {
