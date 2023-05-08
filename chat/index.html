@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Chat Room</title>
+    <body data-page-id="chat-page">
 
     <!-- Bootstrap CSS -->
     <!-- <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css"> -->
@@ -126,7 +127,12 @@
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
-    const socket = io();
+    const socket = io({
+        query: {
+            pageId: document.body.dataset.pageId
+        }
+    });
+
     var chat = document.getElementById('chat');
     var send = document.getElementById("send");
     var text = document.getElementById('text');
@@ -168,19 +174,17 @@
 
     // 用户退出事件
     socket.on('user-left', (username) => {
-        const userListItem = document.querySelector(`[data-username='${username}']`);
-        userListItem.remove();
-
         //show a notification to the existing users when a user leaves
         var item = document.createElement('div');
         item.setAttribute('class', 'chat-message');
         item.innerHTML = username + " left~";
         chat.appendChild(item);
+        console.log('why?')
     });
 
     // 在线用户列表更新事件
     socket.on('users', (users) => {
-        // 清空用户列表
+        // 清空用户列表画
         userListItems.innerHTML = '';
         // 遍历在线用户列表，添加到HTML中
         for (let i = 0; i < users.length; i++) {
@@ -188,8 +192,8 @@
             userListItem.setAttribute('class', 'user-list-item');
             userListItem.innerHTML = `<span>${users[i]}:</span> online`;
             userListItems.appendChild(userListItem);
-            console.log(users);
         }
+
     });
 
 
