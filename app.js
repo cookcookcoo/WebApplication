@@ -4,7 +4,7 @@ const app = require('express')();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 
-// 将 public 目录作为静态文件目录
+// Use the public directory as the static file directory
 app.use(express.static('public'));
 
 //send index.html when a user connects to the server
@@ -24,27 +24,29 @@ let users = [];
 let user1 = '1';
 
 io.on('connection', (socket) => {
-    // 消息发送处理
+    // Message sending processing
     socket.on('send-clicked', (data) => {
         io.emit('send-clicked', data);
     });
 
-    // 用户加入处理
+    // User joining process
     socket.on('join', (username) => {
         user1 = username;
         console.log('User joined:', user1);
         users.push(username);
-        socket.broadcast.emit('user-joined', username); // 发送用户加入事件
-        io.emit('users', users); // 发送在线用户列表   
+        // Send the user joining event
+        socket.broadcast.emit('user-joined', username);
+        // Send the online user list
+        io.emit('users', users);   
     });
 
     socket.on('get-users', () => {
         socket.emit('users', users);
     });
 
-    // 当某个连接断开时的处理函数
+    // Handler when a connection is broken
     socket.on('disconnect', () => {
-        // 根据页面标识来判断是否发送事件
+        // Determine whether to send events based on the page ID
         const pageId = socket.handshake.query.pageId;
         if (pageId === 'chat-page') {
             console.log('disconncect:' + user1);
@@ -59,7 +61,7 @@ io.on('connection', (socket) => {
         }
     });
 
-    //正在输入中。。
+    //typing processing
     socket.on('typing', (username) => {
         socket.broadcast.emit('user-typing', username);
     });
