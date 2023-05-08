@@ -59,6 +59,11 @@ io.on('connection', (socket) => {
         }
     });
 
+    //正在输入中。。
+    socket.on('typing', (username) => {
+        socket.broadcast.emit('user-typing', username);
+    });
+
 
 
 });

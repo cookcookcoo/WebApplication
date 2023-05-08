@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Chat Room</title>
-    <body data-page-id="chat-page">
+
+<body data-page-id="chat-page">
 
     <!-- Bootstrap CSS -->
     <!-- <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css"> -->
@@ -103,105 +104,122 @@
             cursor: pointer;
         }
     </style>
-</head>
+    </head>
 
-<body>
-    <div class="container">
-        <div class="user-list">
-            <div class="user-list-title">Online Users</div>
-            <div id="user-list-items">
-                user1
+    <body>
+        <div class="container">
+            <div class="user-list">
+                <div class="user-list-title">Online Users</div>
+                <div id="user-list-items">
+                    user1
+                </div>
+            </div>
+            <div id="chat" class="chat">
+                <div class="chat-message">
+                    Let's have a chat!
+                </div>
+                <div class="input-container">
+                    <input id="text" type="text" placeholder="Type your message here">
+                    <button id="send">Send</button>
+                </div>
             </div>
         </div>
-        <div id="chat" class="chat">
-            <div class="chat-message">
-                Let's have a chat!
-            </div>
-            <div class="input-container">
-                <input id="text" type="text" placeholder="Type your message here">
-                <button id="send">Send</button>
-            </div>
-        </div>
-    </div>
-</body>
+    </body>
 
-<script src="/socket.io/socket.io.js"></script>
-<script>
-    const socket = io({
-        query: {
-            pageId: document.body.dataset.pageId
-        }
-    });
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-    var chat = document.getElementById('chat');
-    var send = document.getElementById("send");
-    var text = document.getElementById('text');
-    var username = '';
+    <script>
+        const socket = io({
+            query: {
+                pageId: document.body.dataset.pageId
+            }
+        });
 
-    send.addEventListener('click', () => {
-        var value = text.value;
-        socket.emit('send-clicked', { username: username, message: value });
-        text.value = '';
-    });
+        var chat = document.getElementById('chat');
+        var send = document.getElementById("send");
+        var text = document.getElementById('text');
+        var username = '';
 
-    socket.on('send-clicked', (data) => {
-        var item = document.createElement('div');
-        item.setAttribute('class', 'chat-message');
-        item.innerHTML = data.username + ": " + data.message;
-        chat.appendChild(item);
-    });
+        send.addEventListener('click', () => {
+            var value = text.value;
+            socket.emit('send-clicked', { username: username, message: value });
+            text.value = '';
+        });
 
-    const userListItems = document.getElementById("user-list-items");
+        socket.on('send-clicked', (data) => {
+            var item = document.createElement('div');
+            item.setAttribute('class', 'chat-message');
+            item.innerHTML = data.username + ": " + data.message;
+            chat.appendChild(item);
+        });
 
-    // 请求在线用户列表
-    socket.emit('get-users');
+        const userListItems = document.getElementById("user-list-items");
 
-    // 用户加入事件
-    socket.on('user-joined', (username) => {
-        // 添加新用户到HTML中
-        const userListItem = document.createElement('div');
-        userListItem.setAttribute('class', 'user-list-item');
-        userListItem.innerHTML = `<span>${username}:</span> online`;
-        userListItems.appendChild(userListItem);
-        socket.username = username;
+        // 请求在线用户列表
+        socket.emit('get-users');
 
-        //show a notification to the existing users when a new user joins
-        var item = document.createElement('div');
-        item.setAttribute('class', 'chat-message');
-        item.innerHTML = username + " joined~";
-        chat.appendChild(item);
-    });
-
-    // 用户退出事件
-    socket.on('user-left', (username) => {
-        //show a notification to the existing users when a user leaves
-        var item = document.createElement('div');
-        item.setAttribute('class', 'chat-message');
-        item.innerHTML = username + " left~";
-        chat.appendChild(item);
-        console.log('why?')
-    });
-
-    // 在线用户列表更新事件
-    socket.on('users', (users) => {
-        // 清空用户列表画
-        userListItems.innerHTML = '';
-        // 遍历在线用户列表，添加到HTML中
-        for (let i = 0; i < users.length; i++) {
+        // 用户加入事件
+        socket.on('user-joined', (username) => {
+            // 添加新用户到HTML中
             const userListItem = document.createElement('div');
             userListItem.setAttribute('class', 'user-list-item');
-            userListItem.innerHTML = `<span>${users[i]}:</span> online`;
+            userListItem.innerHTML = `<span>${username}:</span> online`;
             userListItems.appendChild(userListItem);
-        }
+            socket.username = username;
 
-    });
+            //show a notification to the existing users when a new user joins
+            var item = document.createElement('div');
+            item.setAttribute('class', 'chat-message');
+            item.innerHTML = username + " joined~";
+            chat.appendChild(item);
+        });
+
+        // 用户退出事件
+        socket.on('user-left', (username) => {
+            //show a notification to the existing users when a user leaves
+            var item = document.createElement('div');
+            item.setAttribute('class', 'chat-message');
+            item.innerHTML = username + " left~";
+            chat.appendChild(item);
+        });
+
+        // 在线用户列表更新事件
+        socket.on('users', (users) => {
+            // 清空用户列表画
+            userListItems.innerHTML = '';
+            // 遍历在线用户列表，添加到HTML中
+            for (let i = 0; i < users.length; i++) {
+                const userListItem = document.createElement('div');
+                userListItem.setAttribute('class', 'user-list-item');
+                userListItem.innerHTML = `<span>${users[i]}:</span> online`;
+                userListItems.appendChild(userListItem);
+            }
+
+        });
+
+        //正在输入中。。
+        text.addEventListener('keydown', () => {
+            if (text.value == ''){    
+            // 发送 'typing' 事件到服务器
+                socket.emit('typing', username);
+            }
+        });
+
+        // 监听 'user-typing' 事件，显示提示信息
+        socket.on('user-typing', (username) => {
+            var item = document.createElement('div');
+            item.setAttribute('class', 'chat-message');
+            item.innerHTML = username + " is typing...";
+            chat.appendChild(item);
+        });
 
 
-    const urlParams = new URLSearchParams(window.location.search);
-    username = urlParams.get('username');
+        const urlParams = new URLSearchParams(window.location.search);
+        username = urlParams.get('username');
 
 
 
-</script>
+    </script>
 
 </html>
